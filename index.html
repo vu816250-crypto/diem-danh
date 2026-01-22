@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Test GPS</title>
+</head>
+<body>
+
+<button onclick="getLocation()">Lấy vị trí</button>
+<pre id="log">Chưa bấm</pre>
+
+<script>
+function getLocation() {
+  const log = document.getElementById("log");
+  log.textContent = "⏳ Đang yêu cầu vị trí...\n";
+
+  if (!navigator.geolocation) {
+    log.textContent += "❌ Trình duyệt không hỗ trợ\n";
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      log.textContent += "✅ THÀNH CÔNG\n";
+      log.textContent += "Lat: " + pos.coords.latitude + "\n";
+      log.textContent += "Lng: " + pos.coords.longitude + "\n";
+      log.textContent += "Accuracy: " + pos.coords.accuracy + " m\n";
+    },
+    function (err) {
+      log.textContent += "❌ LỖI\n";
+      log.textContent += "Code: " + err.code + "\n";
+      log.textContent += "Msg: " + err.message + "\n";
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 0
+    }
+  );
+}
+</script>
+
+</body>
+</html>
