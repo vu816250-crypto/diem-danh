@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Điểm danh GPS</title>
+</head>
+
+<body>
+
+<button onclick="getLocation()">📍 Lấy vị trí & Điểm danh</button>
+<pre id="log">Chưa bấm</pre>
+
+<script>
+/* ===== CẤU HÌNH ===== */
+const CLASS_LAT = 16.461000;
+const CLASS_LNG = 107.602000;
+const MAX_DISTANCE = 30; // mét
+
+const START_TIME = new Date("2026-01-23T02:02:00");
+const END_TIME   = new Date("2026-01-23T07:10:00");
+
+/* ===== HÀM PHỤ ===== */
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) *
+        Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+function checkTime() {
+    const now = new Date();
+    return now >= START_TIME && now <= END_TIME;
+}
+
+/* ===== HÀM CHÍNH ===== */
+function getLocation() {
+    const log = document.getElementById("log");
+
+    if (!checkTime()) {
+        log.textContent = "⛔ Hết thời gian điểm danh";
+        return;
+    }
+
+    if (localStorage.getItem("checked")) {
+        log.textContent = "⚠️ Máy này đã điểm danh rồi";
+        return;
+    }
+
+    log.textContent = "⏳ Đang yêu cầu vị trí...\n";
+
+    if (!navigator.geolocation) {
+        log.textContent += "❌ Trình duyệt không hỗ trợ GPS";
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        function (pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            const acc = pos.coords.accuracy;
+
+            const distance = getDistance(lat, lng, CLASS_LAT, CLASS_LNG);
+
+            log.textContent += "📍 Khoảng cách: " + distance.toFixed(1) + " m\n";
+            log.textContent += "🎯 Accuracy: " + acc + " m\n";
+
+            if (acc > 30) {
+                log.textContent += "❌ GPS không đủ chính xác\n";
+                return;
+            }
+
+            if (distance > MAX_DISTANCE) {
+                log.textContent += "❌ Ngoài phạm vi lớp học\n";
+                return;
+            }
+
+            log.textContent += "✅ ĐIỂM DANH THÀNH CÔNG";
+            localStorage.setItem("checked", "yes");
+        },
+        function (err) {
+            log.textContent += "❌ Lỗi GPS\n";
+            log.textContent += err.message;
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 20000,
+            maximumAge: 0
+        }
+    );
+}
+</script>
+
+</body>
+</html>
