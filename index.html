@@ -1,60 +1,130 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Điểm danh GPS</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Điểm danh GPS</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      font-size: 16px;
-    }
-    #result {
-      margin-top: 15px;
-      white-space: pre-line;
-      font-weight: bold;
-    }
-  </style>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    background: linear-gradient(135deg, #111827, #1f2937);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    color: #fff;
+  }
+
+  .card {
+    background: #0f172a;
+    width: 100%;
+    max-width: 420px;
+    padding: 22px;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,.4);
+  }
+
+  h1 {
+    text-align: center;
+    margin: 0 0 6px;
+  }
+
+  .sub {
+    text-align: center;
+    font-size: 13px;
+    color: #cbd5f5;
+    margin-bottom: 18px;
+  }
+
+  input, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: none;
+    font-size: 16px;
+  }
+
+  input {
+    background: #020617;
+    color: #fff;
+    border: 1px solid #334155;
+  }
+
+  button {
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .btn-main {
+    background: #2563eb;
+    color: white;
+  }
+
+  .btn-sub {
+    background: #1e293b;
+    color: #e5e7eb;
+  }
+
+  #output {
+    margin-top: 14px;
+    background: #020617;
+    padding: 12px;
+    border-radius: 10px;
+    white-space: pre-line;
+    font-size: 14px;
+  }
+
+  .footer {
+    margin-top: 14px;
+    font-size: 12px;
+    text-align: center;
+    color: #94a3b8;
+  }
+</style>
 </head>
+
 <body>
+<div class="card">
+  <h1>📍 ĐIỂM DANH GPS</h1>
+  <div class="sub">Mỗi ngày mỗi máy chỉ điểm danh 1 lần</div>
 
-<h2>📍 Điểm danh GPS</h2>
+  <input id="name" placeholder="Nhập họ và tên">
 
-<input type="text" id="studentName" placeholder="Nhập họ và tên">
+  <button class="btn-main" onclick="checkIn()">📍 Điểm danh</button>
+  <button class="btn-sub" onclick="showList()">📋 Xem danh sách</button>
+  <button class="btn-sub" onclick="exportCSV()">⬇️ Xuất danh sách (Excel)</button>
 
-<button onclick="checkIn()">📍 Lấy vị trí & Điểm danh</button>
+  <div id="output"></div>
 
-<div id="result"></div>
+  <div class="footer">Attendance GPS System</div>
+</div>
 
 <script>
-/* ================== CẤU HÌNH ================== */
+/* ========== CẤU HÌNH ========== */
+// 📍 Toạ độ lớp (SỬA)
+const TARGET_LAT = 16.459199;
+const TARGET_LNG = 107.592467;
 
-// 👉 TOẠ ĐỘ LỚP (SỬA)
-const CLASS_LAT = 16.461231;
-const CLASS_LNG = 107.601894;
+// 📏 Bán kính cho phép (m)
+const ALLOW_RADIUS = 150;
 
-// 👉 BÁN KÍNH CHO PHÉP (m)
-const ALLOW_RADIUS = 30;
-
-// 👉 GIỜ ĐIỂM DANH (SỬA MỖI BUỔI)
-const START_HOUR = 2;
+// ⏰ GIỜ + PHÚT ĐIỂM DANH (CHỈ CẦN CHỈNH CHỖ NÀY)
+const START_HOUR = 15;
 const START_MIN  = 0;
 
-const END_HOUR   = 7;
+const END_HOUR   = 17;
 const END_MIN    = 15;
+/* ============================== */
 
-// 👉 CHỐNG ĐIỂM DANH LẠI
+// 🔑 Key theo NGÀY (tự reset mỗi ngày)
 const today = new Date().toLocaleDateString("vi-VN");
-const STORAGE_KEY = "checked_in_" + today;
-/* ============================================== */
+const CHECK_KEY = "checked_in_" + today;
+const LIST_KEY  = "attendance_list_" + today;
 
+/* ===== KIỂM TRA THỜI GIAN ===== */
 function isWithinTime() {
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -63,85 +133,125 @@ function isWithinTime() {
   return nowMin >= startMin && nowMin <= endMin;
 }
 
-function checkIn() {
-  const name = document.getElementById("studentName").value.trim();
-  const result = document.getElementById("result");
-
-  if (name === "") {
-    result.textContent = "❌ Vui lòng nhập họ và tên";
-    return;
-  }
-
-  if (!isWithinTime()) {
-    result.textContent = "⛔ Ngoài thời gian điểm danh";
-    return;
-  }
-
-  if (localStorage.getItem(STORAGE_KEY)) {
-    result.textContent = "⚠️ Bạn đã điểm danh rồi";
-    return;
-  }
-
-  if (!navigator.geolocation) {
-    result.textContent = "❌ Trình duyệt không hỗ trợ GPS";
-    return;
-  }
-
-  result.textContent = "⏳ Đang lấy vị trí...";
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      const accuracy = pos.coords.accuracy;
-
-      const distance = getDistance(lat, lng, CLASS_LAT, CLASS_LNG);
-
-      const now = new Date();
-      const timeString = now.toLocaleString("vi-VN");
-
-      let output = "";
-      output += `👤 Họ tên: ${name}\n`;
-      output += `📅 Thời gian: ${timeString}\n`;
-      output += `📏 Khoảng cách: ${distance.toFixed(1)} m\n`;
-      output += `🎯 Accuracy: ${accuracy.toFixed(1)} m\n`;
-
-      if (distance <= ALLOW_RADIUS) {
-        output += "✅ ĐIỂM DANH THÀNH CÔNG";
-        localStorage.setItem(STORAGE_KEY, "true");
-      } else {
-        output += "❌ Bạn không ở trong khu vực lớp";
-      }
-
-      result.textContent = output;
-    },
-    () => {
-        result.textContent = "❌ Không lấy được vị trí (chưa bật GPS?)";
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 10000
-    }
-  );
-}
-
-/* ===== TÍNH KHOẢNG CÁCH GPS ===== */
-function getDistance(lat1, lon1, lat2, lon2) {
+/* ===== TÍNH KHOẢNG CÁCH ===== */
+function calcDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000;
-  const toRad = deg => deg * Math.PI / 180;
-
+  const toRad = d => d * Math.PI / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
 
   const a =
-    Math.sin(dLat / 2) ** 2 +
+    Math.sin(dLat/2) ** 2 +
     Math.cos(toRad(lat1)) *
     Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) ** 2;
+    Math.sin(dLon/2) ** 2;
 
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+/* ===== LƯU DANH SÁCH ===== */
+function saveAttendance(name, time, distance) {
+  const list = JSON.parse(localStorage.getItem(LIST_KEY) || "[]");
+  list.push({ name, time, distance });
+  localStorage.setItem(LIST_KEY, JSON.stringify(list));
+}
+
+/* ===== ĐIỂM DANH ===== */
+function checkIn() {
+  const output = document.getElementById("output");
+  const name = document.getElementById("name").value.trim();
+
+  if (!name) {
+    output.textContent = "❌ Vui lòng nhập họ tên";
+    return;
+  }
+
+  if (!isWithinTime()) {
+    output.textContent = "⛔ Ngoài thời gian điểm danh";
+    return;
+  }
+
+  if (localStorage.getItem(CHECK_KEY)) {
+    output.textContent = "⚠️ Máy này đã điểm danh hôm nay";
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    output.textContent = "❌ Trình duyệt không hỗ trợ GPS";
+    return;
+  }
+
+  output.textContent = "⏳ Đang lấy vị trí...";
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    const acc = pos.coords.accuracy;
+
+    const dist = calcDistance(lat, lng, TARGET_LAT, TARGET_LNG);
+    const timeStr = new Date().toLocaleString("vi-VN");
+
+    let text =
+      `👤 ${name}\n` +
+      `⏰ ${timeStr}\n` +
+      `📏 ${dist.toFixed(1)} m\n` +
+      `🎯 Accuracy: ${acc.toFixed(1)} m\n`;
+
+    if (dist <= ALLOW_RADIUS) {
+      text += "\n✅ ĐIỂM DANH THÀNH CÔNG";
+      localStorage.setItem(CHECK_KEY, "1");
+      saveAttendance(name, timeStr, dist.toFixed(1));
+    } else {
+      text += "\n❌ Bạn không ở trong khu vực lớp";
+    }
+
+    output.textContent = text;
+  }, () => {
+    output.textContent = "❌ Không lấy được vị trí GPS";
+  }, {
+    enableHighAccuracy: true,
+    timeout: 10000
+  });
+}
+
+/* ===== XEM DANH SÁCH ===== */
+function showList() {
+  const list = JSON.parse(localStorage.getItem(LIST_KEY) || "[]");
+  if (list.length === 0) {
+    alert("❌ Chưa có ai điểm danh");
+    return;
+  }
+
+  let text = "📋 DANH SÁCH ĐIỂM DANH\n\n";
+  list.forEach((s, i) => {
+    text += `${i+1}. ${s.name}\n⏰ ${s.time}\n📏 ${s.distance} m\n\n`;
+  });
+
+  alert(text);
+}
+
+/* ===== XUẤT CSV (EXCEL) ===== */
+function exportCSV() {
+  const list = JSON.parse(localStorage.getItem(LIST_KEY) || "[]");
+  if (list.length === 0) {
+    alert("❌ Không có dữ liệu để xuất");
+    return;
+  }
+
+  let csv = "STT,Họ tên,Thời gian,Khoảng cách (m)\n";
+  list.forEach((s, i) => {
+    csv += `${i+1},"${s.name}","${s.time}",${s.distance}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `diem_danh_${today}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 </script>
-
 </body>
 </html>
