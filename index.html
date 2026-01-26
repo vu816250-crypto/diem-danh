@@ -141,7 +141,12 @@ function submitAttendance(data) {
 }
 /* ============================ */
 // 🔑 Key theo NGÀY (tự reset mỗi ngày)
-const today = new Date().toLocaleDateString("vi-VN");
+const today = new Date().toLocaleTimeString("vi-VN", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false
+})
 const CHECK_KEY = "checked_in_" + today;
 const LIST_KEY  = "attendance_list_" + today;
 
