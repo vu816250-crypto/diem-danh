@@ -103,6 +103,12 @@
 </div>
 
 <script>
+  // 🔧 CHẾ ĐỘ BẢO TRÌ (BẬT / TẮT)
+const MAINTENANCE_MODE = true; // true = nghỉ Tết | false = hoạt động
+const MAINTENANCE_MSG =
+  "🧧 ADMIN ĐI ĂN TẾT RỒI 🎉\n" +
+  "Hệ thống điểm danh tạm nghỉ.\n" +
+  "Hẹn gặp lại sau Tết nha!";
 /* ========== CẤU HÌNH ========== */
 // 📍 Toạ độ lớp (SỬA)
 const TARGET_LAT = 16.459627;
@@ -112,7 +118,7 @@ const TARGET_LNG = 107.592789;
 const ALLOW_RADIUS = 150;
 
 // ⏰ GIỜ + PHÚT ĐIỂM DANH (CHỈ CẦN CHỈNH CHỖ NÀY)
-const START_HOUR = 7;
+const START_HOUR = 7 ;
 const START_MIN  = 0;
 
 const END_HOUR   = 21;
@@ -179,6 +185,10 @@ function saveAttendance(name, time, distance) {
 function checkIn() {
   const output = document.getElementById("output");
   const name = document.getElementById("name").value.trim();
+  if (MAINTENANCE_MODE) {
+    document.getElementById("output").textContent = MAINTENANCE_MSG;
+    return;
+  }
 
   if (!name) {
     output.textContent = "❌ Vui lòng nhập họ tên";
