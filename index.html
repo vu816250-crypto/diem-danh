@@ -87,6 +87,50 @@
 </head>
 
 <body>
+  <!-- HACK OVERLAY -->
+<div id="hackOverlay">
+    <h2 class="blink">⚠ SYSTEM ERROR ⚠</h2>
+    <p id="hackProgress">Loading: 0%</p>
+    <div id="hackLog"></div>
+</div>
+
+<style>
+#hackOverlay{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:black;
+    color:#00ff00;
+    font-family:monospace;
+    z-index:9999;
+    padding:20px;
+}
+
+.blink{
+    animation: blink 0.5s infinite;
+    color:red;
+}
+
+@keyframes blink{
+    0%{opacity:1;}
+    50%{opacity:0;}
+    100%{opacity:1;}
+}
+
+.shake{
+    animation: shake 0.1s infinite;
+}
+
+@keyframes shake{
+    0%{transform: translate(2px,2px);}
+    25%{transform: translate(-2px,-2px);}
+    50%{transform: translate(2px,-2px);}
+    75%{transform: translate(-2px,2px);}
+    100%{transform: translate(0,0);}
+}
+</style>
 <div class="card">
   <h1>📍 ĐIỂM DANH GPS</h1>
   <div class="sub">Mỗi ngày mỗi máy chỉ điểm danh 1 lần</div>
@@ -103,6 +147,63 @@
 </div>
 
 <script>
+let percent = 0;
+let progressText = document.getElementById("hackProgress");
+let log = document.getElementById("hackLog");
+let overlay = document.getElementById("hackOverlay");
+
+let fakeLogs = [
+    "Connecting to mainframe...",
+    "Bypassing firewall...",
+    "Access granted.",
+    "Decrypting database...",
+    "Extracting passwords...",
+    "Uploading to remote server...",
+    "Cleaning traces..."
+];
+
+let logIndex = 0;
+
+function updateProgress(){
+
+    progressText.innerText = "Loading: " + percent + "%";
+
+    if(percent % 12 === 0 && logIndex < fakeLogs.length){
+        let line = document.createElement("p");
+        line.innerText = fakeLogs[logIndex];
+        log.appendChild(line);
+        logIndex++;
+    }
+
+    // 👇 Tốc độ thay đổi theo từng giai đoạn
+    let delay;
+
+    if(percent < 20){
+        delay = 120;   // đầu chậm
+    } 
+    else if(percent < 50){
+        delay = 60;    // nhanh hơn chút
+    }
+    else if(percent < 75){
+        delay = 180;   // khựng lại giữa chừng
+    }
+    else{
+        delay = 90;    // gần cuối tăng nhẹ
+    }
+
+    percent++;
+
+    if(percent <= 100){
+        setTimeout(updateProgress, delay);
+    } else {
+        overlay.style.display = "none";
+        document.body.classList.remove("shake");
+    }
+
+    
+}
+updateProgress();
+
   // 🔧 CHẾ ĐỘ BẢO TRÌ (BẬT / TẮT)
 const MAINTENANCE_MODE = false; // true = nghỉ Tết | false = hoạt động
 const MAINTENANCE_MSG =
@@ -292,6 +393,7 @@ function exportCSV() {
   a.click();
   URL.revokeObjectURL(url);
 }
+
 </script>
 </body>
 </html>
